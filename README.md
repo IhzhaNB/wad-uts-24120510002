@@ -99,6 +99,11 @@ npm install
 npm run dev
 ```
 
+Dua server itu yang dipakai aplikasi UTS ini: backend FastAPI di `:8000`, frontend Vue 3 di
+`:5173`. Nyalakan backend dulu, baru frontend — `frontend/` mengambil data dari
+`http://localhost:8000/sessions`, dan CORS hanya mengizinkan origin `http://localhost:5173`.
+Swagger UI-nya ada di `http://localhost:8000/docs`.
+
 ## 4. Cara memverifikasi
 
 Satu perintah, dipakai sepanjang semester:
@@ -120,6 +125,39 @@ Verifikasi manual yang juga dinilai:
 - `http://localhost:5173` — halaman kerangka muncul, masih rapi di lebar 360px
 - `http://localhost:8000/health` — balas `200` dengan `{"status":"ok"}`
 - `http://localhost:8000/docs` — OpenAPI terbuka
+
+### Requirement UTS
+
+Dijalankan dengan backend hidup di `:8000`:
+
+```bash
+# GET /sessions — search pada field route/driver + pagination skip/limit
+curl "http://localhost:8000/sessions?search=budi&skip=0&limit=5"
+
+# GET /sessions/{id} — 404 {"detail":"Session not found"} untuk id yang tidak ada
+curl -i http://localhost:8000/sessions/9999
+
+# POST /sessions — 201 Created + id baru; body yang melanggar aturan membalas 422
+curl -i -X POST http://localhost:8000/sessions -H 'Content-Type: application/json' \
+  -d '{"route":"Kampus Utama - Kopma","driver":"Budi Santoso","capacity":8,"departure_time":"07:30"}'
+
+# DELETE /sessions/{id} — 204 No Content tanpa badan; id yang tidak ada membalas 404
+curl -i -X DELETE http://localhost:8000/sessions/1
+
+# CORS — origin Vite mendapat access-control-allow-origin, origin lain tidak
+curl -i -H "Origin: http://localhost:5173" http://localhost:8000/sessions | grep -i access-control
+curl -i -H "Origin: http://evil.example" http://localhost:8000/sessions | grep -i access-control
+```
+
+Di frontend `http://localhost:5173`, empat keadaan ini dicek satu per satu:
+
+- **Loading** — teks "Memuat data shuttle session…" tampil selama data diambil.
+- **Error** — matikan backend lalu muat ulang halaman; muncul pesan error dan tombol **Retry**
+  yang mengambil data ulang setelah backend hidup lagi.
+- **Empty** — cari kata yang tidak ada (misal `zzzz`), muncul pesan pencarian tidak ditemukan.
+- **Success** — tabel terisi, pencarian menyaring `route`/`driver`, tombol **Prev/Next** menggeser
+  `skip`/`limit` (Prev mati di halaman pertama, Next mati di halaman terakhir), dan tiap baris
+  punya tombol **Hapus** dengan konfirmasi browser `confirm()`.
 
 ## 5. Masalah yang sering muncul
 
@@ -201,7 +239,13 @@ nilainya 0.
 - Sesi 5 — GitHub Copilot, autocomplete pada model SQLAlchemy. Ditinjau dan diubah manual.
 -->
 
-- _(belum ada)_
+- UTS individual, dikerjakan sebelum Sesi 8 — `opencode` (AI coding agent, model
+  `opencode/mimo-v2.6-flash-free`) membantu menyusun `backend/app/` (data in-memory, skema
+  Pydantic, lima endpoint + CORS), komponen `frontend/src/` (daftar 4 keadaan, form tambah,
+  hapus dengan konfirmasi), dan draf dokumentasi ini. Semua perubahan saya tinjau sebelum
+  di-commit, dan verifikasinya saya jalankan sendiri: `npm run build`, `python verify.py`,
+  `curl` tiap endpoint, serta pengujian browser untuk empat keadaan UI, validasi form, dan
+  alur hapus. Saya bisa menjelaskan setiap baris yang ada di repo ini.
 
 ## Kalau kamu tersendat
 
