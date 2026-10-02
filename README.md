@@ -128,26 +128,25 @@ Verifikasi manual yang juga dinilai:
 
 ### Requirement UTS
 
-Dijalankan dengan backend hidup di `:8000`:
+Dijalankan dengan backend hidup di `:8000`, lewat **Swagger UI di
+`http://localhost:8000/docs`** (bukan curl):
 
-```bash
-# GET /sessions — search pada field route/driver + pagination skip/limit
-curl "http://localhost:8000/sessions?search=budi&skip=0&limit=5"
+1. **GET /sessions** — klik **Try it out**, isi `search=budi`, `skip=0`, `limit=5`
+   → **Execute** → respons `200` berisi hasil pencarian pada field `route`/`driver`.
+2. **GET /sessions/{session_id}** — isi `session_id=9999` → **Execute** → `404`
+   `{"detail":"Session not found"}`.
+3. **POST /sessions** — **Try it out**, isi body valid (`route`, `driver`, `capacity`,
+   `departure_time`) → **Execute** → `201 Created` + `id` baru.
+4. **POST /sessions** — ulangi dengan body yang melanggar aturan (mis. `capacity:-1`
+   atau `route` kurang dari 3 karakter) → **Execute** → `422` + detail validasi Pydantic.
+5. **DELETE /sessions/{session_id}** — id yang ada (mis. `1`) → `204 No Content` tanpa
+   badan; id yang tidak ada (`9999`) → `404`.
+6. **CORS** — tidak bisa diuji dari Swagger. Buka `http://localhost:5173`, DevTools →
+   tab **Network** → request `/sessions` → lihat header respons
+   `access-control-allow-origin: http://localhost:5173`.
 
-# GET /sessions/{id} — 404 {"detail":"Session not found"} untuk id yang tidak ada
-curl -i http://localhost:8000/sessions/9999
-
-# POST /sessions — 201 Created + id baru; body yang melanggar aturan membalas 422
-curl -i -X POST http://localhost:8000/sessions -H 'Content-Type: application/json' \
-  -d '{"route":"Kampus Utama - Kopma","driver":"Budi Santoso","capacity":8,"departure_time":"07:30"}'
-
-# DELETE /sessions/{id} — 204 No Content tanpa badan; id yang tidak ada membalas 404
-curl -i -X DELETE http://localhost:8000/sessions/1
-
-# CORS — origin Vite mendapat access-control-allow-origin, origin lain tidak
-curl -i -H "Origin: http://localhost:5173" http://localhost:8000/sessions | grep -i access-control
-curl -i -H "Origin: http://evil.example" http://localhost:8000/sessions | grep -i access-control
-```
+> Dataset bersifat **in-memory**: POST/DELETE hilang saat backend berhenti. Restart
+> `uvicorn` dulu sebelum mulai testing supaya data awal (13 baris) konsisten.
 
 Di frontend `http://localhost:5173`, empat keadaan ini dicek satu per satu:
 
@@ -155,9 +154,36 @@ Di frontend `http://localhost:5173`, empat keadaan ini dicek satu per satu:
 - **Error** — matikan backend lalu muat ulang halaman; muncul pesan error dan tombol **Retry**
   yang mengambil data ulang setelah backend hidup lagi.
 - **Empty** — cari kata yang tidak ada (misal `zzzz`), muncul pesan pencarian tidak ditemukan.
-- **Success** — tabel terisi, pencarian menyaring `route`/`driver`, tombol **Prev/Next** menggeser
-  `skip`/`limit` (Prev mati di halaman pertama, Next mati di halaman terakhir), dan tiap baris
-  punya tombol **Hapus** dengan konfirmasi browser `confirm()`.
+- **Success** — tabel terisi, pencarian menyaring `route`/`driver`, tombol **Prev/Next**
+  (ikon panah `ChevronLeft`/`ChevronRight`) menggeser `skip`/`limit` (Prev mati di halaman
+  pertama, Next mati di halaman terakhir), dan tiap baris punya tombol **Hapus** (ikon
+  `Trash2`) dengan konfirmasi browser `confirm()`. Badge status berwarna per makna:
+  `Available` hijau, `Booked` biru, `Full` merah, `Maintenance` kuning.
+
+### Checklist requirement UTS
+
+Bukti screenshot tersimpan di `docs/screenshots/` dan direferensikan langsung dari tabel
+di bawah ini.
+
+| # | Requirement | Cara verifikasi | ✓ | Bukti |
+|---|---|---|---|---|
+| 1 | Dataset in-memory ≥ 12 baris | Buka `backend/app/data.py` (13 baris) | ✓ | [`backend/app/data.py`](backend/app/data.py) |
+| 2 | GET `/sessions` — pagination + search | `/docs` → GET `/sessions` → Try it out → `search=budi`, `skip=0`, `limit=5` → Execute | ✓ | ![Swagger GET /sessions dengan search](docs/screenshots/02-get-search.png) |
+| 3 | GET `/sessions/{id}` — 404 | `/docs` → GET `/sessions/{session_id}` → id `9999` → Execute | ✓ | ![Swagger GET 404](docs/screenshots/03-get-404.png) |
+| 4 | POST `/sessions` — Pydantic 201 | `/docs` → POST `/sessions` → body valid → Execute → `201` + id baru | ✓ | ![Swagger POST 201](docs/screenshots/04-post-201.png) |
+| 5 | POST `/sessions` — validasi 422 | `/docs` → POST `/sessions` → body invalid (`capacity:-1`) → Execute → `422` | ✓ | ![Swagger POST 422](docs/screenshots/05-post-422.png) |
+| 6 | DELETE `/sessions/{id}` — 204 | `/docs` → DELETE `/sessions/{session_id}` → id `1` → Execute → `204` tanpa badan | ✓ | ![Swagger DELETE 204](docs/screenshots/06-delete-204.png) |
+| 7 | DELETE id tak ada — 404 | `/docs` → DELETE → id `9999` → Execute → `404` | ✓ | ![Swagger DELETE 404](docs/screenshots/07-delete-404.png) |
+| 8 | CORS origin frontend | `:5173` → DevTools Network → request `/sessions` → header `access-control-allow-origin` | ✓ | ![Header CORS di DevTools](docs/screenshots/08-cors.png) |
+| 9 | Frontend daftar dari API | Buka `http://localhost:5173`, tabel terisi | ✓ | ![Halaman utama dengan tabel terisi](docs/screenshots/09-daftar.png) |
+| 10 | State **Loading** | Muat ulang halaman, teks "Memuat data shuttle session…" tampil | ✓ | ![State loading](docs/screenshots/10-loading.png) |
+| 11 | State **Error** + Retry | Matikan backend → reload → pesan error + tombol Retry; nyalakan backend → Retry sukses | ✓ | ![State error dengan tombol Retry](docs/screenshots/11-error.png) |
+| 12 | State **Empty** | Cari `zzzz` → pesan pencarian tidak ditemukan | ✓ | ![State empty](docs/screenshots/12-empty.png) |
+| 13 | State **Success** + pagination | Tabel terisi; Prev/Next menggeser halaman, status disabled tepat | ✓ | ![Tabel dan pagination](docs/screenshots/13-success.png) |
+| 14 | Form create + validasi | Submit kosong → error per field; isi valid → baris baru muncul (201) | ✓ | ![Error validasi form](docs/screenshots/14-form-validasi.png) · ![Hasil submit valid](docs/screenshots/14-form-sukses.png) |
+| 15 | Hapus dengan konfirmasi | Klik ikon hapus → dialog `confirm()` → OK → baris hilang (204) | ✓ | ![Dialog konfirmasi hapus](docs/screenshots/15-confirm.png) |
+| 16 | Backend `/health` + `/docs` | Buka `http://localhost:8000/health` → `{"status":"ok"}`; buka `http://localhost:8000/docs` | ✓ | ![Respons /health](docs/screenshots/16-health.png) · ![Swagger UI terbuka](docs/screenshots/16-swagger-ui.png) |
+| 17 | `python verify.py --sesi 2` hijau | Semua pemeriksaan OK | ✓ | ![Keluaran verify.py hijau](docs/screenshots/17-verify.png) |
 
 ## 5. Masalah yang sering muncul
 
@@ -244,8 +270,8 @@ nilainya 0.
   Pydantic, lima endpoint + CORS), komponen `frontend/src/` (daftar 4 keadaan, form tambah,
   hapus dengan konfirmasi), dan draf dokumentasi ini. Semua perubahan saya tinjau sebelum
   di-commit, dan verifikasinya saya jalankan sendiri: `npm run build`, `python verify.py`,
-  `curl` tiap endpoint, serta pengujian browser untuk empat keadaan UI, validasi form, dan
-  alur hapus. Saya bisa menjelaskan setiap baris yang ada di repo ini.
+  uji tiap endpoint lewat Swagger (`/docs`), serta pengujian browser untuk empat keadaan UI,
+  validasi form, dan alur hapus. Saya bisa menjelaskan setiap baris yang ada di repo ini.
 
 ## Kalau kamu tersendat
 

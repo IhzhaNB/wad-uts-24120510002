@@ -1,5 +1,6 @@
 <script setup>
 import { ref } from 'vue'
+import { Plus } from '@lucide/vue'
 
 const API_URL = 'http://localhost:8000/sessions'
 
@@ -92,37 +93,56 @@ async function submitForm() {
 </script>
 
 <template>
-  <section class="session-form" aria-labelledby="session-form-title">
-    <h2 id="session-form-title">Tambah Session</h2>
-    <p class="subtitle">Isi rute shuttle untuk menambahkan jadwal baru.</p>
+  <section
+    class="mx-6 my-8 border border-line bg-surface-1 p-6"
+    aria-labelledby="session-form-title"
+  >
+    <h2 id="session-form-title" class="font-serif text-2xl leading-8 font-normal text-primary">
+      Tambah Session
+    </h2>
+    <p class="mt-1 text-[15px] leading-[23px] text-muted">
+      Isi rute shuttle untuk menambahkan jadwal baru.
+    </p>
 
-    <form novalidate @submit.prevent="submitForm">
-      <div class="field">
-        <label for="field-route">Rute</label>
+    <form
+      novalidate
+      class="mt-5 grid grid-cols-1 items-start gap-4 md:grid-cols-[2fr_1.4fr_0.8fr_0.9fr]"
+      @submit.prevent="submitForm"
+    >
+      <div class="flex flex-col gap-1.5">
+        <label for="field-route" class="text-[13px] font-bold text-primary">Rute</label>
         <input
           id="field-route"
           v-model="form.route"
           type="text"
           placeholder="mis. Kampus Utama - Stasiun Tugu"
           autocomplete="off"
+          class="w-full border border-line bg-white px-3 py-2.5 text-[16px] leading-[26px] text-primary outline-none transition-colors duration-200 placeholder:text-muted focus:border-primary"
+          :class="{ 'border-danger': fieldErrors.route }"
         />
-        <p v-if="fieldErrors.route" class="field-error">{{ fieldErrors.route }}</p>
+        <p v-if="fieldErrors.route" class="text-[13px] leading-[23px] text-danger">
+          {{ fieldErrors.route }}
+        </p>
       </div>
 
-      <div class="field">
-        <label for="field-driver">Driver</label>
+      <div class="flex flex-col gap-1.5">
+        <label for="field-driver" class="text-[13px] font-bold text-primary">Driver</label>
         <input
           id="field-driver"
           v-model="form.driver"
           type="text"
           placeholder="mis. Budi Santoso"
           autocomplete="off"
+          class="w-full border border-line bg-white px-3 py-2.5 text-[16px] leading-[26px] text-primary outline-none transition-colors duration-200 placeholder:text-muted focus:border-primary"
+          :class="{ 'border-danger': fieldErrors.driver }"
         />
-        <p v-if="fieldErrors.driver" class="field-error">{{ fieldErrors.driver }}</p>
+        <p v-if="fieldErrors.driver" class="text-[13px] leading-[23px] text-danger">
+          {{ fieldErrors.driver }}
+        </p>
       </div>
 
-      <div class="field field-small">
-        <label for="field-capacity">Kapasitas</label>
+      <div class="flex flex-col gap-1.5">
+        <label for="field-capacity" class="text-[13px] font-bold text-primary">Kapasitas</label>
         <input
           id="field-capacity"
           v-model="form.capacity"
@@ -130,151 +150,55 @@ async function submitForm() {
           min="1"
           step="1"
           placeholder="12"
+          class="w-full border border-line bg-white px-3 py-2.5 text-[16px] leading-[26px] text-primary outline-none transition-colors duration-200 placeholder:text-muted focus:border-primary"
+          :class="{ 'border-danger': fieldErrors.capacity }"
         />
-        <p v-if="fieldErrors.capacity" class="field-error">{{ fieldErrors.capacity }}</p>
+        <p v-if="fieldErrors.capacity" class="text-[13px] leading-[23px] text-danger">
+          {{ fieldErrors.capacity }}
+        </p>
       </div>
 
-      <div class="field field-small">
-        <label for="field-departure">Jam Berangkat</label>
-        <input id="field-departure" v-model="form.departure_time" type="time" />
-        <p v-if="fieldErrors.departure_time" class="field-error">
+      <div class="flex flex-col gap-1.5">
+        <label for="field-departure" class="text-[13px] font-bold text-primary">
+          Jam Berangkat
+        </label>
+        <input
+          id="field-departure"
+          v-model="form.departure_time"
+          type="time"
+          class="w-full border border-line bg-white px-3 py-2.5 text-[16px] leading-[26px] text-primary outline-none transition-colors duration-200 focus:border-primary"
+          :class="{ 'border-danger': fieldErrors.departure_time }"
+        />
+        <p v-if="fieldErrors.departure_time" class="text-[13px] leading-[23px] text-danger">
           {{ fieldErrors.departure_time }}
         </p>
       </div>
 
-      <div class="actions">
-        <button type="submit" class="btn btn-submit" :disabled="submitting">
+      <div class="md:col-span-4">
+        <button
+          type="submit"
+          class="flex items-center gap-2 bg-primary px-10 py-2.5 text-[16px] font-semibold text-white transition-colors duration-200 hover:bg-[#0e1c2b] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary disabled:cursor-not-allowed disabled:opacity-55"
+          :disabled="submitting"
+        >
+          <Plus :size="16" />
           {{ submitting ? 'Mengirim…' : 'Tambah Session' }}
         </button>
       </div>
     </form>
 
-    <p v-if="serverError" class="form-error" role="alert">{{ serverError }}</p>
-    <p v-if="success" class="form-success" role="status">{{ success }}</p>
+    <p
+      v-if="serverError"
+      role="alert"
+      class="mt-4 border border-danger bg-white px-4 py-3 text-[15px] leading-[23px] text-danger"
+    >
+      {{ serverError }}
+    </p>
+    <p
+      v-if="success"
+      role="status"
+      class="mt-4 border border-line bg-white px-4 py-3 text-[15px] leading-[23px] text-primary"
+    >
+      {{ success }}
+    </p>
   </section>
 </template>
-
-<style scoped>
-.session-form {
-  text-align: left;
-  margin: 32px 24px 8px;
-  padding: 24px;
-  border: 1px solid var(--border);
-  border-radius: 12px;
-  background: var(--social-bg);
-}
-
-.subtitle {
-  margin-top: 4px;
-  font-size: 15px;
-}
-
-form {
-  display: grid;
-  grid-template-columns: 2fr 1.4fr 0.8fr 0.9fr;
-  gap: 16px;
-  align-items: start;
-  margin-top: 20px;
-}
-
-@media (max-width: 900px) {
-  form {
-    grid-template-columns: 1fr 1fr;
-  }
-}
-
-@media (max-width: 560px) {
-  form {
-    grid-template-columns: 1fr;
-  }
-}
-
-.field {
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-}
-
-.field label {
-  font-size: 13px;
-  text-transform: uppercase;
-  letter-spacing: 0.6px;
-  color: var(--text-h);
-}
-
-.field input {
-  font: inherit;
-  color: var(--text-h);
-  background: var(--bg);
-  border: 1px solid var(--border);
-  border-radius: 8px;
-  padding: 9px 12px;
-  width: 100%;
-  box-sizing: border-box;
-}
-
-.field input:focus-visible {
-  outline: 2px solid var(--accent);
-  outline-offset: 1px;
-}
-
-.field-error {
-  font-size: 13px;
-  color: #dc2626;
-}
-
-.actions {
-  grid-column: 1 / -1;
-}
-
-.btn {
-  font: inherit;
-  font-size: 15px;
-  color: var(--text-h);
-  background: var(--bg);
-  border: 1px solid var(--border);
-  border-radius: 8px;
-  padding: 9px 18px;
-  cursor: pointer;
-}
-
-.btn:disabled {
-  opacity: 0.55;
-  cursor: not-allowed;
-}
-
-.btn-submit {
-  color: #fff;
-  background: var(--accent);
-  border-color: var(--accent);
-}
-
-.btn-submit:hover:not(:disabled) {
-  box-shadow: var(--shadow);
-}
-
-.btn-submit:focus-visible {
-  outline: 2px solid var(--accent);
-  outline-offset: 2px;
-}
-
-.form-error {
-  margin-top: 16px;
-  padding: 12px 16px;
-  border: 1px solid rgba(220, 38, 38, 0.5);
-  border-radius: 8px;
-  background: rgba(220, 38, 38, 0.08);
-  color: #dc2626;
-  font-size: 15px;
-}
-
-.form-success {
-  margin-top: 16px;
-  padding: 12px 16px;
-  border: 1px solid rgba(22, 163, 74, 0.5);
-  border-radius: 8px;
-  background: rgba(22, 163, 74, 0.1);
-  color: #16a34a;
-  font-size: 15px;
-}
-</style>

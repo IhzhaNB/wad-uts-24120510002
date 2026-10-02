@@ -11,74 +11,34 @@ function handleCreated() {
 </script>
 
 <template>
-  <div class="page">
-    <header class="page-header">
-      <h1>Shuttle Kampus</h1>
-      <nav aria-label="Navigasi utama">
-        <a href="#sessions">Daftar Session</a>
-        <a href="#session-form">Tambah Session</a>
+  <div class="flex min-h-svh flex-col bg-white text-left font-sans text-body">
+    <header
+      class="flex flex-wrap items-baseline gap-x-6 gap-y-4 bg-primary px-6 py-5"
+    >
+      <h1 class="font-serif text-[32px] leading-tight font-normal text-white">
+        Shuttle Kampus
+      </h1>
+      <nav aria-label="Navigasi utama" class="flex gap-4">
+        <a
+          href="#sessions"
+          class="border-b border-white/40 pb-0.5 text-[15px] text-on-dark transition-colors duration-200 hover:border-white hover:text-white"
+        >
+          Daftar Session
+        </a>
+        <a
+          href="#session-form"
+          class="border-b border-white/40 pb-0.5 text-[15px] text-on-dark transition-colors duration-200 hover:border-white hover:text-white"
+        >
+          Tambah Session
+        </a>
       </nav>
     </header>
 
-    <main>
+    <main class="flex-1">
       <SessionForm id="session-form" @created="handleCreated" />
       <div id="sessions">
         <SessionList ref="list" />
       </div>
     </main>
-
-    <footer class="page-footer">
-      <p>WAD UTS — Pemesanan Shuttle Kampus</p>
-    </footer>
   </div>
 </template>
-
-<style scoped>
-.page {
-  min-height: 100svh;
-  display: flex;
-  flex-direction: column;
-  text-align: left;
-}
-
-.page-header {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: baseline;
-  gap: 16px 24px;
-  padding: 24px;
-  border-bottom: 1px solid var(--border);
-}
-
-.page-header h1 {
-  font-size: 32px;
-  letter-spacing: -0.8px;
-  margin: 0;
-}
-
-.page-header nav {
-  display: flex;
-  gap: 18px;
-}
-
-.page-header nav a {
-  color: var(--accent);
-  text-decoration: none;
-  font-size: 15px;
-  border-bottom: 1px solid transparent;
-}
-
-.page-header nav a:hover {
-  border-bottom-color: var(--accent-border);
-}
-
-main {
-  flex: 1;
-}
-
-.page-footer {
-  padding: 20px 24px;
-  border-top: 1px solid var(--border);
-  font-size: 14px;
-}
-</style>

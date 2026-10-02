@@ -1,5 +1,17 @@
 <script setup>
 import { computed, onMounted, ref, watch } from 'vue'
+import {
+  ChevronLeft,
+  ChevronRight,
+  CircleCheck,
+  CircleX,
+  Clock,
+  RotateCcw,
+  SearchX,
+  Trash2,
+  Wrench,
+  X,
+} from '@lucide/vue'
 
 const API_URL = 'http://localhost:8000/sessions'
 
@@ -29,6 +41,8 @@ async function fetchSessions() {
   loading.value = true
   error.value = ''
   try {
+    // Jeda buatan agar state loading (spinner + pesan) terlihat jelas saat diverifikasi
+    await new Promise((resolve) => setTimeout(resolve, 4000))
     const params = new URLSearchParams({
       skip: String(skip.value),
       limit: String(limit.value + 1),
@@ -112,6 +126,25 @@ async function removeSession(session) {
   }
 }
 
+const statusMeta = {
+  Available: {
+    icon: CircleCheck,
+    class: 'border-green-600/50 bg-green-600/10 text-green-700',
+  },
+  Booked: {
+    icon: Clock,
+    class: 'border-blue-600/50 bg-blue-600/10 text-blue-700',
+  },
+  Full: {
+    icon: CircleX,
+    class: 'border-red-600/50 bg-red-600/10 text-red-700',
+  },
+  Maintenance: {
+    icon: Wrench,
+    class: 'border-amber-600/50 bg-amber-600/10 text-amber-700',
+  },
+}
+
 watch(search, () => {
   skip.value = 0
   selectedId.value = null
@@ -124,92 +157,174 @@ defineExpose({ reload: fetchSessions })
 </script>
 
 <template>
-  <section class="session-list" aria-labelledby="session-list-title">
-    <header class="toolbar">
+  <section class="px-6 py-8" aria-labelledby="session-list-title">
+    <div class="flex flex-wrap items-end justify-between gap-4">
       <div>
-        <h2 id="session-list-title">Daftar Shuttle Session</h2>
-        <p class="subtitle">Pemesanan shuttle kampus — data dari API FastAPI.</p>
+        <h2 id="session-list-title" class="font-serif text-2xl leading-8 font-normal text-primary">
+          Daftar Shuttle Session
+        </h2>
+        <p class="mt-1 text-[15px] leading-[23px] text-muted">
+          Pemesanan shuttle kampus — data dari API FastAPI.
+        </p>
       </div>
-      <div class="search-box">
-        <label for="session-search">Cari</label>
+      <div class="flex flex-col gap-1.5">
+        <label for="session-search" class="text-[13px] font-bold text-primary">Cari</label>
         <input
           id="session-search"
           v-model="search"
           type="search"
           placeholder="Cari rute atau driver…"
           autocomplete="off"
+          class="min-w-[240px] border border-line bg-white px-3 py-2.5 text-[16px] leading-[26px] text-primary outline-none transition-colors duration-200 placeholder:text-muted focus:border-primary"
         />
       </div>
-    </header>
+    </div>
 
-    <p v-if="notice" class="notice" role="status">
+    <p
+      v-if="notice"
+      role="status"
+      class="mt-5 flex items-center justify-between gap-3 border border-line bg-surface-1 px-4 py-3 text-[15px] leading-[23px] text-primary"
+    >
       <span>{{ notice }}</span>
-      <button type="button" class="notice-close" @click="dismissNotice">Tutup</button>
+      <button
+        type="button"
+        title="Tutup"
+        aria-label="Tutup pemberitahuan"
+        class="flex h-8 w-8 flex-none items-center justify-center text-muted transition-colors duration-200 hover:text-primary focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
+        @click="dismissNotice"
+      >
+        <X :size="18" />
+      </button>
     </p>
 
-    <div v-if="loading" class="state state-loading" role="status" aria-live="polite">
-      <span class="spinner" aria-hidden="true"></span>
-      <p>Memuat data shuttle session…</p>
+    <div
+      v-if="loading"
+      role="status"
+      aria-live="polite"
+      class="mt-5 flex items-center gap-3 border border-line bg-surface-1 px-6 py-6"
+    >
+      <span
+        class="h-5 w-5 flex-none animate-spin rounded-full border-2 border-line border-t-primary"
+        aria-hidden="true"
+      ></span>
+      <p class="text-[16px] leading-[26px] text-body">Memuat data shuttle session…</p>
     </div>
 
-    <div v-else-if="error" class="state state-error" role="alert">
-      <p class="state-title">Gagal memuat data</p>
-      <p>{{ error }}</p>
-      <button type="button" class="btn btn-retry" @click="retry">Retry</button>
+    <div v-else-if="error" role="alert" class="mt-5 border border-danger bg-surface-1 px-6 py-6">
+      <p class="text-[16px] font-bold text-primary">Gagal memuat data</p>
+      <p class="mt-1 text-[16px] leading-[26px] text-body">{{ error }}</p>
+      <button
+        type="button"
+        title="Coba lagi"
+        aria-label="Muat ulang data (Retry)"
+        class="mt-4 flex items-center gap-2 bg-primary px-10 py-2.5 text-[16px] font-semibold text-white transition-colors duration-200 hover:bg-[#0e1c2b] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
+        @click="retry"
+      >
+        <RotateCcw :size="16" />
+        Retry
+      </button>
     </div>
 
-    <div v-else-if="isEmpty" class="state state-empty">
-      <p class="state-title">Tidak ada data</p>
-      <p v-if="search.trim()">
+    <div v-else-if="isEmpty" class="mt-5 border border-line bg-surface-1 px-6 py-6">
+      <p class="text-[16px] font-bold text-primary">Tidak ada data</p>
+      <p v-if="search.trim()" class="mt-1 text-[16px] leading-[26px] text-body">
         Pencarian “{{ search.trim() }}” tidak ditemukan. Coba kata kunci lain.
       </p>
-      <p v-else>Belum ada shuttle session yang tersedia.</p>
-      <button v-if="search.trim()" type="button" class="btn" @click="search = ''">
+      <p v-else class="mt-1 text-[16px] leading-[26px] text-body">
+        Belum ada shuttle session yang tersedia.
+      </p>
+      <button
+        v-if="search.trim()"
+        type="button"
+        title="Bersihkan pencarian"
+        aria-label="Bersihkan pencarian"
+        class="mt-4 flex items-center gap-2 border-b border-primary pb-0.5 text-[16px] font-semibold text-primary transition-colors duration-200 hover:border-link hover:text-link"
+        @click="search = ''"
+      >
+        <SearchX :size="16" />
         Bersihkan pencarian
       </button>
     </div>
 
-    <div v-else class="state state-success">
-      <div class="table-wrap">
-        <table>
+    <div v-else class="mt-5 border border-line bg-white">
+      <div class="overflow-x-auto">
+        <table class="w-full border-collapse text-left">
           <thead>
-            <tr>
-              <th scope="col">ID</th>
-              <th scope="col">Rute</th>
-              <th scope="col">Driver</th>
-              <th scope="col">Kapasitas</th>
-              <th scope="col">Berangkat</th>
-              <th scope="col">Status</th>
-              <th scope="col">Aksi</th>
+            <tr class="bg-surface-2">
+              <th scope="col" class="border-b border-line px-3.5 py-3 text-[13px] font-bold text-primary">
+                ID
+              </th>
+              <th scope="col" class="border-b border-line px-3.5 py-3 text-[13px] font-bold text-primary">
+                Rute
+              </th>
+              <th scope="col" class="border-b border-line px-3.5 py-3 text-[13px] font-bold text-primary">
+                Driver
+              </th>
+              <th scope="col" class="border-b border-line px-3.5 py-3 text-[13px] font-bold text-primary">
+                Kapasitas
+              </th>
+              <th scope="col" class="border-b border-line px-3.5 py-3 text-[13px] font-bold text-primary">
+                Berangkat
+              </th>
+              <th scope="col" class="border-b border-line px-3.5 py-3 text-[13px] font-bold text-primary">
+                Status
+              </th>
+              <th scope="col" class="border-b border-line px-3.5 py-3 text-[13px] font-bold text-primary">
+                Aksi
+              </th>
             </tr>
           </thead>
           <tbody>
             <tr
               v-for="session in sessions"
               :key="session.id"
-              :class="{ selected: selectedId === session.id }"
+              :class="[
+                'cursor-pointer border-b border-line-soft transition-colors duration-150 last:border-b-0 hover:bg-surface-1 focus-visible:bg-surface-1 focus-visible:outline-none',
+                selectedId === session.id ? 'bg-surface-1' : '',
+              ]"
               tabindex="0"
               @click="toggleSelect(session.id)"
               @keydown.enter="toggleSelect(session.id)"
             >
-              <td class="mono">{{ session.id }}</td>
-              <td class="route">{{ session.route }}</td>
-              <td>{{ session.driver }}</td>
-              <td class="mono">{{ session.capacity }}</td>
-              <td class="mono">{{ session.departure_time }}</td>
-              <td>
-                <span class="badge" :class="`badge-${session.status.toLowerCase()}`">
+              <td class="px-3.5 py-3 font-mono text-[15px] text-muted">{{ session.id }}</td>
+              <td
+                class="min-w-[220px] px-3.5 py-3 text-[16px] leading-[26px] font-semibold whitespace-nowrap text-primary"
+              >
+                {{ session.route }}
+              </td>
+              <td class="px-3.5 py-3 text-[16px] leading-[26px] text-body">
+                {{ session.driver }}
+              </td>
+              <td class="px-3.5 py-3 font-mono text-[15px] text-muted">{{ session.capacity }}</td>
+              <td class="px-3.5 py-3 font-mono text-[15px] text-muted">
+                {{ session.departure_time }}
+              </td>
+              <td class="px-3.5 py-3">
+                <span
+                  class="inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-[13px] leading-none font-semibold"
+                  :class="
+                    statusMeta[session.status]?.class ?? 'border-line bg-surface-1 text-muted'
+                  "
+                >
+                  <component
+                    :is="statusMeta[session.status]?.icon ?? Clock"
+                    :size="14"
+                    aria-hidden="true"
+                  />
                   {{ session.status }}
                 </span>
               </td>
-              <td>
+              <td class="px-3.5 py-3">
                 <button
                   type="button"
-                  class="btn btn-delete"
+                  :title="`Hapus session: ${session.route}`"
+                  :aria-label="`Hapus session ${session.route}`"
+                  class="flex h-8 w-8 items-center justify-center text-danger transition-colors duration-200 hover:text-primary focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary disabled:cursor-not-allowed disabled:opacity-55"
                   :disabled="deletingId === session.id"
                   @click.stop="removeSession(session)"
                 >
-                  {{ deletingId === session.id ? 'Menghapus…' : 'Hapus' }}
+                  <RotateCcw v-if="deletingId === session.id" :size="16" class="animate-spin" />
+                  <Trash2 v-else :size="16" />
                 </button>
               </td>
             </tr>
@@ -217,289 +332,34 @@ defineExpose({ reload: fetchSessions })
         </table>
       </div>
 
-      <nav class="pagination" aria-label="Navigasi halaman session">
-        <button type="button" class="btn" :disabled="skip === 0" @click="goPrev">
-          Prev
+      <nav
+        aria-label="Navigasi halaman session"
+        class="flex flex-wrap items-center justify-between gap-3 border-t border-line px-4 py-3"
+      >
+        <button
+          type="button"
+          title="Halaman sebelumnya"
+          aria-label="Prev"
+          class="flex h-9 w-9 items-center justify-center border border-line text-primary transition-colors duration-200 hover:border-primary hover:bg-surface-1 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary disabled:cursor-not-allowed disabled:border-line-soft disabled:text-muted disabled:hover:border-line-soft disabled:hover:bg-transparent"
+          :disabled="skip === 0"
+          @click="goPrev"
+        >
+          <ChevronLeft :size="18" />
         </button>
-        <span class="page-info">Menampilkan {{ rangeLabel }} dari total hasil</span>
-        <button type="button" class="btn" :disabled="!hasMore" @click="goNext">
-          Next
+        <span class="text-[14px] leading-[23px] text-muted">
+          Menampilkan {{ rangeLabel }} dari total hasil
+        </span>
+        <button
+          type="button"
+          title="Halaman berikutnya"
+          aria-label="Next"
+          class="flex h-9 w-9 items-center justify-center border border-line text-primary transition-colors duration-200 hover:border-primary hover:bg-surface-1 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary disabled:cursor-not-allowed disabled:border-line-soft disabled:text-muted disabled:hover:border-line-soft disabled:hover:bg-transparent"
+          :disabled="!hasMore"
+          @click="goNext"
+        >
+          <ChevronRight :size="18" />
         </button>
       </nav>
     </div>
   </section>
 </template>
-
-<style scoped>
-.session-list {
-  text-align: left;
-  width: 100%;
-  box-sizing: border-box;
-  padding: 32px 24px;
-}
-
-.toolbar {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 16px;
-  align-items: flex-end;
-  justify-content: space-between;
-  margin-bottom: 20px;
-}
-
-.subtitle {
-  margin-top: 4px;
-  font-size: 15px;
-}
-
-.search-box {
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-}
-
-.search-box label {
-  font-size: 13px;
-  text-transform: uppercase;
-  letter-spacing: 0.6px;
-}
-
-.search-box input {
-  font: inherit;
-  color: var(--text-h);
-  background: var(--bg);
-  border: 1px solid var(--border);
-  border-radius: 8px;
-  padding: 9px 12px;
-  min-width: 240px;
-}
-
-.search-box input:focus-visible {
-  outline: 2px solid var(--accent);
-  outline-offset: 1px;
-}
-
-.notice {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 12px;
-  margin-bottom: 16px;
-  padding: 12px 16px;
-  border: 1px solid var(--accent-border);
-  border-radius: 8px;
-  background: var(--accent-bg);
-  color: var(--text-h);
-  font-size: 15px;
-}
-
-.notice-close {
-  font: inherit;
-  font-size: 13px;
-  color: var(--text-h);
-  background: transparent;
-  border: 1px solid var(--border);
-  border-radius: 6px;
-  padding: 4px 10px;
-  cursor: pointer;
-}
-
-.notice-close:hover {
-  border-color: var(--accent-border);
-}
-
-.state {
-  border: 1px solid var(--border);
-  border-radius: 12px;
-  padding: 24px;
-  background: var(--social-bg);
-}
-
-.state-title {
-  color: var(--text-h);
-  font-weight: 600;
-  margin-bottom: 6px;
-}
-
-.state-loading {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-}
-
-.spinner {
-  width: 20px;
-  height: 20px;
-  border: 3px solid var(--border);
-  border-top-color: var(--accent);
-  border-radius: 50%;
-  animation: spin 0.8s linear infinite;
-  flex: none;
-}
-
-@keyframes spin {
-  to {
-    transform: rotate(360deg);
-  }
-}
-
-.state-error {
-  border-color: rgba(220, 38, 38, 0.5);
-  background: rgba(220, 38, 38, 0.08);
-}
-
-.state-success {
-  padding: 0;
-  overflow: hidden;
-}
-
-.table-wrap {
-  overflow-x: auto;
-}
-
-table {
-  width: 100%;
-  border-collapse: collapse;
-  font-size: 15px;
-}
-
-th,
-td {
-  padding: 12px 14px;
-  border-bottom: 1px solid var(--border);
-  text-align: left;
-  white-space: nowrap;
-}
-
-th {
-  background: var(--code-bg);
-  color: var(--text-h);
-  font-weight: 600;
-  font-size: 13px;
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
-}
-
-tbody tr {
-  cursor: pointer;
-  transition: background 0.15s;
-}
-
-tbody tr:hover,
-tbody tr:focus-visible {
-  background: var(--accent-bg);
-  outline: none;
-}
-
-tbody tr.selected {
-  background: var(--accent-bg);
-  box-shadow: inset 3px 0 0 var(--accent);
-}
-
-.route {
-  white-space: normal;
-  min-width: 220px;
-  color: var(--text-h);
-}
-
-.mono {
-  font-family: var(--mono);
-}
-
-.badge {
-  display: inline-block;
-  padding: 3px 10px;
-  border-radius: 999px;
-  font-size: 13px;
-  border: 1px solid var(--border);
-  background: var(--code-bg);
-  color: var(--text-h);
-}
-
-.badge-available {
-  border-color: rgba(22, 163, 74, 0.5);
-  background: rgba(22, 163, 74, 0.12);
-  color: #16a34a;
-}
-
-.badge-booked {
-  border-color: rgba(37, 99, 235, 0.5);
-  background: rgba(37, 99, 235, 0.12);
-  color: #2563eb;
-}
-
-.badge-full {
-  border-color: rgba(220, 38, 38, 0.5);
-  background: rgba(220, 38, 38, 0.12);
-  color: #dc2626;
-}
-
-.badge-maintenance {
-  border-color: rgba(217, 119, 6, 0.5);
-  background: rgba(217, 119, 6, 0.12);
-  color: #d97706;
-}
-
-.pagination {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 12px;
-  padding: 14px 16px;
-  border-top: 1px solid var(--border);
-  background: var(--bg);
-}
-
-.page-info {
-  font-size: 14px;
-}
-
-.btn {
-  font: inherit;
-  font-size: 15px;
-  color: var(--text-h);
-  background: var(--bg);
-  border: 1px solid var(--border);
-  border-radius: 8px;
-  padding: 8px 16px;
-  cursor: pointer;
-  transition:
-    border-color 0.2s,
-    box-shadow 0.2s;
-}
-
-.btn:hover:not(:disabled) {
-  border-color: var(--accent-border);
-  box-shadow: var(--shadow);
-}
-
-.btn:focus-visible {
-  outline: 2px solid var(--accent);
-  outline-offset: 2px;
-}
-
-.btn:disabled {
-  opacity: 0.45;
-  cursor: not-allowed;
-}
-
-.btn-retry {
-  margin-top: 12px;
-  color: #fff;
-  background: #dc2626;
-  border-color: #dc2626;
-}
-
-.btn-delete {
-  font-size: 14px;
-  padding: 6px 12px;
-  color: #dc2626;
-  border-color: rgba(220, 38, 38, 0.45);
-}
-
-.btn-delete:hover:not(:disabled) {
-  color: #fff;
-  background: #dc2626;
-  border-color: #dc2626;
-}
-</style>
