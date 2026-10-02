@@ -1,58 +1,12 @@
-# The Build — Starter
+# Shuttle Kampus — UTS WAD (Sesi 8, individu)
 
-**CIK3101 · Web Application Development · Sains Data · Semester 3 · Universitas Cakrawala**
+Aplikasi pemesanan jadwal shuttle kampus: daftar jadwal dengan pencarian, pagination,
+penambahan, dan penghapusan — backend **FastAPI** + frontend **Vue 3** (Tailwind CSS v4).
+Tanpa basis data: data in-memory di `backend/app/data.py` (13 baris), sengaja agar seluruh
+alur UTS dapat diuji ulang dari nol hanya dengan me-restart backend.
 
-Repo ini adalah tempat kerja kelompokmu selama 16 sesi. Artefak tiap sesi dikerjakan **di dalam
-sesi** dan di-commit sebelum kelas selesai. **Tidak ada pekerjaan rumah.**
-
-Repo ini sengaja **belum berisi aplikasi**. `frontend/` dan `backend/` kosong — kamu yang
-mengisinya, mulai malam ini di Sesi 2. Yang sudah disediakan hanyalah rel: dokumen, CI, dan
-pemeriksa nilai.
-
-> **Proyek akhir mata kuliah ini bernama The Build, bobot 20% (Tugas Kelompok).**
-> The Build bukan tugas tambahan. The Build adalah gabungan artefak Sesi 2–14 di repo ini,
-> didemokan di Sesi 15 dan diverifikasi di Sesi 16. Baca **[`docs/PROJECT.md`](docs/PROJECT.md)**
-> — itu piagam proyekmu, dan diisi malam ini.
-
----
-
-## 0. Membuat repo kelompok (sekali saja, di Sesi 2)
-
-Ini **administratif**, bukan tugas — sama seperti membawa laptop. Dikerjakan **ketua kelompok**,
-sekali, di awal lab.
-
-```bash
-# 1. Di GitHub: buka repo template ini, klik "Use this template" -> "Create a new repository"
-#    Nama repo : wad-2026-kNN     (NN = nomor kelompokmu, contoh wad-2026-k04)
-#    Visibility: PUBLIC           (wajib — branch protection tidak tersedia di repo privat gratis)
-
-# 2. Tambahkan 3 anggota lain sebagai collaborator
-#    Settings -> Collaborators -> Add people   (pakai username GitHub mereka)
-
-# 3. Semua anggota clone repo KELOMPOK, bukan template-nya
-git clone https://github.com/<username-ketua>/wad-2026-kNN
-cd wad-2026-kNN
-cp .env.example .env
-```
-
-**4. Lindungi `main`** — ini butir 1 rubrik malam ini, dan dilakukan ketua:
-
-> Settings → Branches → **Add branch protection rule**
-> - Branch name pattern: `main`
-> - ☑ **Require a pull request before merging**
-> - ☑ **Do not allow bypassing the above settings**
-> - Save changes
-
-Setelah itu `git push` langsung ke `main` akan ditolak. Itu memang tujuannya. Semua perubahan
-lewat branch `feature/*` dan pull request.
-
-> "Require approvals" **jangan** dinyalakan malam ini — undangan collaborator mungkin belum
-> diterima semua anggota, dan kamu akan terkunci tidak bisa merge. Naikkan ke 1 approval di
-> Sesi 3, setelah semua anggota masuk.
-
-**5. Kirim URL repo kelompokmu ke thread RISE.** Tanpa itu dosen tidak tahu ke mana harus menilai.
-
----
+Repo ini adalah repo UTS individual. Piagam proyek kelompok The Build ada di
+[`docs/PROJECT.md`](docs/PROJECT.md); rubrik UTS (B25/F27/Q13 + pembelaan 35) dibahas di sana.
 
 ## 1. Prasyarat
 
@@ -61,28 +15,27 @@ lewat branch `feature/*` dan pull request.
 | Git | apa saja | `git --version` |
 | Node.js | 20 LTS atau lebih baru | `node -v` |
 | Python | 3.11 atau lebih baru | `python --version` |
-| Akun GitHub | — | sudah jadi anggota repo ini |
 
 > Windows: saat install Python dari python.org, **centang "Add Python to PATH"**.
 > Kalau `python` tidak dikenali, coba `py`.
 
-Tidak ada yang perlu di-install untuk basis data sampai Sesi 5. Sampai sesi itu repo memakai
-SQLite, yang sudah menyatu dengan Python.
+Tidak ada dependensi eksternal yang perlu di-install selain `pip install -r
+backend/requirements.txt` dan `npm install` di `frontend/`. Basis data tidak dipakai pada UTS
+ini — tidak ada yang perlu di-setup.
 
 ## 2. Layanan
 
-| Layanan | Port lokal | Mulai dipakai | Catatan |
+| Layanan | Port lokal | Berkas | Catatan |
 |---|---|---|---|
-| Frontend (Vite + Vue 3) | `5173` | Sesi 2 | kamu yang membuat isi `frontend/` |
-| Backend (FastAPI + Uvicorn) | `8000` | Sesi 2 | kamu yang membuat isi `backend/` |
-| Basis data | — | Sesi 3 | SQLite lokal; ganti ke Postgres (Neon) di Sesi 5 lewat `DATABASE_URL` |
+| Backend (FastAPI + Uvicorn) | `8000` | `backend/app/` | data in-memory; Swagger UI di `/docs` |
+| Frontend (Vite + Vue 3) | `5173` | `frontend/src/` | mengambil data dari `http://localhost:8000/sessions` |
+
+CORS backend hanya mengizinkan origin `http://localhost:5173`, jadi kedua server harus
+berjalan bersamaan.
 
 ## 3. Cara menjalankan
 
 ```bash
-# sekali saja, setelah clone
-cp .env.example .env
-
 # --- backend (terminal 1) ---
 cd backend
 python -m venv venv
@@ -99,10 +52,69 @@ npm install
 npm run dev
 ```
 
-Dua server itu yang dipakai aplikasi UTS ini: backend FastAPI di `:8000`, frontend Vue 3 di
-`:5173`. Nyalakan backend dulu, baru frontend — `frontend/` mengambil data dari
-`http://localhost:8000/sessions`, dan CORS hanya mengizinkan origin `http://localhost:5173`.
-Swagger UI-nya ada di `http://localhost:8000/docs`.
+Nyalakan backend dulu, baru frontend. Setelah itu:
+
+- `http://localhost:5173` — aplikasi
+- `http://localhost:8000/docs` — Swagger UI untuk menguji endpoint
+- `http://localhost:8000/health` — `{"status":"ok"}`
+
+## API Contract
+
+Base URL lokal: `http://localhost:8000`. Kontrak lengkap interaktif ada di `/docs`
+(OpenAPI otomatis dari FastAPI).
+
+| Method | Endpoint | Parameter / body | Keberhasilan | Kegagalan |
+|---|---|---|---|---|
+| GET | `/health` | — | `200` `{"status":"ok"}` | — |
+| GET | `/sessions` | query `skip` (≥0), `limit` (≥1), `search` (opsional) | `200` daftar `SessionOut` | — |
+| GET | `/sessions/{session_id}` | path `session_id` | `200` satu `SessionOut` | `404` `{"detail":"Session not found"}` |
+| POST | `/sessions` | body `SessionCreate` (JSON) | `201` `SessionOut` + `id` baru | `422` detail validasi Pydantic |
+| DELETE | `/sessions/{session_id}` | path `session_id` | `204` tanpa badan | `404` `{"detail":"Session not found"}` |
+
+**Skema** (`backend/app/schemas.py`):
+
+| Field | Tipe | Aturan |
+|---|---|---|
+| `route` | string | minimal 3 karakter |
+| `driver` | string | minimal 2 karakter |
+| `capacity` | integer | > 0 |
+| `departure_time` | string | wajib (ISO 8601, mis. `2026-09-30T07:30:00`) |
+| `status` | string | opsional, default `Available` |
+| `id` | integer | hanya pada respons (`SessionOut`), dihasilkan server |
+
+**Perilaku kunci:**
+
+- `search` memfilter `route` dan `driver` case-insensitive, lalu `skip`/`limit` diterapkan
+  sebagai offset pagination pada hasil tersaring.
+- `POST` divalidasi Pydantic sebelum masuk daftar; body yang melanggar aturan di atas
+  menghasilkan `422`, bukan `500`.
+- CORS: origin `http://localhost:5173` diizinkan (`allow_credentials=True`); endpoint lain
+  ditolak browser untuk origin berbeda.
+- Penyimpanan in-memory: hasil `POST`/`DELETE` hilang saat backend berhenti.
+
+## Penyelesaian Tugas
+
+Pemetaan tiap requirement UTS ke kode yang mengimplementasikannya:
+
+| # | Requirement | Implementasi | Status |
+|---|---|---|---|
+| 1 | Dataset in-memory ≥ 12 baris | [`backend/app/data.py`](backend/app/data.py) — 13 baris | ✓ |
+| 2 | GET `/sessions` — pagination + search | `backend/app/main.py:24` — `list_sessions()` dengan `skip`/`limit`/`search` | ✓ |
+| 3 | GET `/sessions/{id}` — 404 | `backend/app/main.py:39` — `get_session()`, `HTTPException(404)` | ✓ |
+| 4 | POST `/sessions` — 201 + validasi Pydantic | `backend/app/main.py:47` + [`backend/app/schemas.py`](backend/app/schemas.py) | ✓ |
+| 5 | POST `/sessions` — validasi `422` | `schemas.py` — `Field(min_length=…, gt=…)` | ✓ |
+| 6 | DELETE `/sessions/{id}` — 204 | `backend/app/main.py:55` — `delete_session()` → `Response(204)` | ✓ |
+| 7 | DELETE id tak ada — 404 | `backend/app/main.py:55` — cabang `HTTPException(404)` | ✓ |
+| 8 | CORS origin frontend | `backend/app/main.py:10` — `CORSMiddleware` | ✓ |
+| 9 | Frontend daftar dari API | `frontend/src/components/SessionList.vue:40` — `fetchSessions()` | ✓ |
+| 10 | State Loading | `SessionList.vue:210` — pesan "Memuat data shuttle session…" | ✓ |
+| 11 | State Error + Retry | `SessionList.vue:59` — blok `catch` + tombol Retry | ✓ |
+| 12 | State Empty | `SessionList.vue` — pesan pencarian tidak ditemukan | ✓ |
+| 13 | State Success + pagination | `SessionList.vue` — tabel + Prev/Next `skip`/`limit` | ✓ |
+| 14 | Form create + validasi | `frontend/src/components/SessionForm.vue:52` — `submitForm()` | ✓ |
+| 15 | Hapus dengan konfirmasi | `SessionList.vue:95` — `confirm()` sebelum DELETE | ✓ |
+| 16 | Backend `/health` + `/docs` | `backend/app/main.py:19` — route `/health` | ✓ |
+| 17 | `python verify.py --sesi 2` hijau | [`verify.py`](verify.py) — dijalankan sendiri | ✓ |
 
 ## 4. Cara memverifikasi
 
@@ -113,23 +125,11 @@ python verify.py --sesi 2
 ```
 
 `verify.py` adalah **perintah yang sama persis** yang dipakai dosen untuk memeriksa artefakmu.
-Kalau hijau di laptopmu, hijau juga saat dinilai. Jalankan sebelum kamu keluar dari sesi.
+Kalau hijau di laptopmu, hijau juga saat dinilai.
 
-> **CI merah saat repo baru itu normal.** Pemeriksa berjalan juga di GitHub Actions, dan pada
-> repo kosong ia memang gagal — belum ada `frontend/` dan `backend/`. **Membuatnya hijau adalah
-> tugasmu malam ini.** Ketentuan 7 (CI merah = 0 fungsionalitas) dinilai pada akhir sesi, bukan
-> pada commit pertama.
+### Requirement UTS lewat Swagger UI
 
-Verifikasi manual yang juga dinilai:
-
-- `http://localhost:5173` — halaman kerangka muncul, masih rapi di lebar 360px
-- `http://localhost:8000/health` — balas `200` dengan `{"status":"ok"}`
-- `http://localhost:8000/docs` — OpenAPI terbuka
-
-### Requirement UTS
-
-Dijalankan dengan backend hidup di `:8000`, lewat **Swagger UI di
-`http://localhost:8000/docs`** (bukan curl):
+Dijalankan dengan backend hidup di `:8000`, di **`http://localhost:8000/docs`**:
 
 1. **GET /sessions** — klik **Try it out**, isi `search=budi`, `skip=0`, `limit=5`
    → **Execute** → respons `200` berisi hasil pencarian pada field `route`/`driver`.
@@ -148,22 +148,20 @@ Dijalankan dengan backend hidup di `:8000`, lewat **Swagger UI di
 > Dataset bersifat **in-memory**: POST/DELETE hilang saat backend berhenti. Restart
 > `uvicorn` dulu sebelum mulai testing supaya data awal (13 baris) konsisten.
 
-Di frontend `http://localhost:5173`, empat keadaan ini dicek satu per satu:
+Di frontend `http://localhost:5173`, empat keadaan dicek satu per satu:
 
 - **Loading** — teks "Memuat data shuttle session…" tampil selama data diambil.
 - **Error** — matikan backend lalu muat ulang halaman; muncul pesan error dan tombol **Retry**
   yang mengambil data ulang setelah backend hidup lagi.
 - **Empty** — cari kata yang tidak ada (misal `zzzz`), muncul pesan pencarian tidak ditemukan.
 - **Success** — tabel terisi, pencarian menyaring `route`/`driver`, tombol **Prev/Next**
-  (ikon panah `ChevronLeft`/`ChevronRight`) menggeser `skip`/`limit` (Prev mati di halaman
-  pertama, Next mati di halaman terakhir), dan tiap baris punya tombol **Hapus** (ikon
-  `Trash2`) dengan konfirmasi browser `confirm()`. Badge status berwarna per makna:
-  `Available` hijau, `Booked` biru, `Full` merah, `Maintenance` kuning.
+  menggeser `skip`/`limit`, dan tiap baris punya tombol **Hapus** dengan konfirmasi browser
+  `confirm()`. Badge status berwarna per makna: `Available` hijau, `Booked` biru, `Full`
+  merah, `Maintenance` kuning.
 
-### Checklist requirement UTS
+### Bukti penyelesaian
 
-Bukti screenshot tersimpan di `docs/screenshots/` dan direferensikan langsung dari tabel
-di bawah ini.
+Screenshot tersimpan di `docs/screenshots/` dan direferensikan langsung dari tabel di bawah.
 
 | # | Requirement | Cara verifikasi | ✓ | Bukti |
 |---|---|---|---|---|
@@ -192,49 +190,28 @@ di bawah ini.
 | `python` tidak dikenali (Windows) | PATH tidak dicentang saat install | pakai `py`, atau install ulang dan centang "Add Python to PATH" |
 | `npm run dev` jalan tapi halaman kosong | `index.html` tidak menunjuk `src/main.js` | cek `<script type="module" src="/src/main.js">` |
 | `/health` 404 | `app.main` bukan modul yang dijalankan | jalankan `uvicorn` dari dalam folder `backend/` |
-| CI merah karena `secret-scan` | ada rahasia ter-commit | **hapus nilainya, rotasi, commit ulang** — lihat Ketentuan 8 di bawah |
+| Frontend: "Tidak dapat memuat data" terus | backend tidak jalan, atau port bukan `8000` | nyalakan `uvicorn app.main:app --reload`; pastikan `:8000` |
+| Tabel kosong padahal backend jalan | CORS menolak origin | akses via `http://localhost:5173`, bukan `127.0.0.1:5173` |
+| Data POST/DELETE hilang setelah restart | penyimpanan in-memory | normal; restart `uvicorn` untuk kembali ke 13 baris awal |
+| Port `5173`/`8000` terpakai | server sebelumnya belum mati | matikan proses lama, atau jalankan Vite dengan `--port` lain |
 | `venv/` ikut ter-commit | `.gitignore` diubah | kembalikan `.gitignore` bawaan repo |
-| Menu **Branches → Add rule** tidak ada | repo dibuat **Private** | Settings → General → Danger Zone → **Change visibility → Public** |
-| Tidak bisa merge PR sendiri | "Require approvals" sudah dinyalakan | matikan dulu malam ini (lihat bagian 0 langkah 4) |
 
 ---
 
-## Berkas siapa
+## Penggunaan AI assistant
 
-| Punya kamu — kerjakan | Punya dosen — jangan diubah |
-|---|---|
-| `frontend/` (seluruhnya) | `verify.py` |
-| `backend/` (seluruhnya) | `.github/workflows/` |
-| `docs/PROJECT.md` (isian piagam) | `Dockerfile` |
-| `docs/api-contract.md`, `docs/state.md` | `.gitignore`, `.env.example` |
-| `CONTRIBUTORS.md` (isian nama) | `docs/DEPLOY.md` |
-| `README.md` bagian 1–5 di atas | bagian **Ketentuan** di bawah |
+AI assistant **diizinkan** pada sesi praktikum, dan **dilarang pada UTS (Sesi 8) dan UAS
+(Sesi 16)**. Syaratnya satu: tulis pengungkapan singkat di bawah ini, dan perbarui saat berubah.
+Ketentuan 1 tetap berlaku penuh — kalau kamu tidak bisa menjelaskan kode yang dihasilkan AI,
+nilainya 0.
 
-Mengubah berkas milik dosen agar `verify.py` jadi hijau dihitung sebagai artefak yang tidak dapat
-dipertahankan — nilainya 0 (Ketentuan 5).
-
-## Peta sesi
-
-| Sesi | Bobot | Yang jadi di ruang kelas |
-|---|---|---|
-| 1 | 2% | Jejak permintaan beranotasi |
-| **2** | **2%** | **Repo + kerangka frontend/backend + README + 1 PR + piagam `docs/PROJECT.md`** |
-| 3 | 2% | Endpoint pertama berjalan (FastAPI, Pydantic, status code) |
-| 4 | **5%** | Diagram lapisan MVC + refactor satu endpoint |
-| 5 | 2% | CRUD persisten + migrasi Alembic diterapkan · **pindah ke Postgres** |
-| 6 | 2% | Rute + controller tipis + penanganan error terpusat |
-| 7 | **5%** | `docs/api-contract.md` + model data (peer review) |
-| **8** | **25%** | **UTS — ujian praktik individual** |
-| 9 | 2% | Alur login berfungsi (JWT + bcrypt) |
-| 10 | 2% | Otorisasi tingkat objek + RBAC |
-| 11 | **5%** | Kerentanan ditemukan dan ditutup (break-in round) |
-| 12 | 2% | Frontend terhubung + dua grafik + `docs/state.md` |
-| 13 | 2% | Lima pengujian berjalan + tabel pengukuran di README |
-| 14 | **5%** | **URL publik aktif + CI hijau** |
-| 15 | 2% | **Demo The Build 8 menit di URL publik + pembelaan** |
-| **16** | **25%** | **UAS — verifikasi submission + pembelaan tertulis** |
-
-Urutan ini mengikuti RPS, bukan nomor berkas catatan mingguan.
+- UTS individual, dikerjakan sebelum Sesi 8 — `opencode` (AI coding agent, model
+  `opencode/mimo-v2.6-flash-free`) membantu menyusun `backend/app/` (data in-memory, skema
+  Pydantic, lima endpoint + CORS), komponen `frontend/src/` (daftar 4 keadaan, form tambah,
+  hapus dengan konfirmasi), dan draf dokumentasi ini. Semua perubahan saya tinjau sebelum
+  di-commit, dan verifikasinya saya jalankan sendiri: `npm run build`, `python verify.py`,
+  uji tiap endpoint lewat Swagger (`/docs`), serta pengujian browser untuk empat keadaan UI,
+  validasi form, dan alur hapus. Saya bisa menjelaskan setiap baris yang ada di repo ini.
 
 ## Ketentuan yang paling sering menghapus nilai
 
@@ -252,30 +229,3 @@ Urutan ini mengikuti RPS, bukan nomor berkas catatan mingguan.
    `.env` ada di `.gitignore` dan CI menjalankan pemindai rahasia.
 5. **Commit sebelum keluar.** Semua tenggat adalah akhir sesi. Waktu commit adalah bukti kerjamu
    dilakukan di dalam sesi.
-
-## Penggunaan AI assistant
-
-AI assistant **diizinkan** pada sesi praktikum, dan **dilarang pada UTS (Sesi 8) dan UAS
-(Sesi 16)**. Syaratnya satu: tulis pengungkapan singkat di bawah ini, dan perbarui saat berubah.
-Ketentuan 1 tetap berlaku penuh — kalau kamu tidak bisa menjelaskan kode yang dihasilkan AI,
-nilainya 0.
-
-<!-- ISI BAGIAN INI. Contoh:
-- Sesi 2 — Claude, untuk menjelaskan pesan error `npm ERR! ENOENT`. Kode ditulis sendiri.
-- Sesi 5 — GitHub Copilot, autocomplete pada model SQLAlchemy. Ditinjau dan diubah manual.
--->
-
-- UTS individual, dikerjakan sebelum Sesi 8 — `opencode` (AI coding agent, model
-  `opencode/mimo-v2.6-flash-free`) membantu menyusun `backend/app/` (data in-memory, skema
-  Pydantic, lima endpoint + CORS), komponen `frontend/src/` (daftar 4 keadaan, form tambah,
-  hapus dengan konfirmasi), dan draf dokumentasi ini. Semua perubahan saya tinjau sebelum
-  di-commit, dan verifikasinya saya jalankan sendiri: `npm run build`, `python verify.py`,
-  uji tiap endpoint lewat Swagger (`/docs`), serta pengujian browser untuk empat keadaan UI,
-  validasi form, dan alur hapus. Saya bisa menjelaskan setiap baris yang ada di repo ini.
-
-## Kalau kamu tersendat
-
-Tersendat di satu sesi tidak menghapus nilai sesi lain — **berhenti total yang menghapusnya**.
-Kalau `frontend` atau `backend` tim belum jalan, tetap masuk sesi berikutnya, kerjakan yang bisa
-dikerjakan, lalu minta waktu di 10 menit pertama sesi berikutnya. Lapor di thread RISE dengan
-**seluruh pesan error**, bukan ringkasannya.
